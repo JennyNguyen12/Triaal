@@ -12,7 +12,7 @@ import warnings
 import os, sys
 import joblib
 import random
-from unidecode import unidecode
+
 
 
 
@@ -29,6 +29,23 @@ def display_product_info(product):
 
 
 # Create a Streamlit app
+
+def remove_diacritics(input_str):
+    # Dictionary mapping characters with diacritics to their corresponding characters without diacritics
+    diacritics_map = {
+        'á': 'a', 'à': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
+        'ă': 'a', 'ắ': 'a', 'ằ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
+        'â': 'a', 'ấ': 'a', 'ầ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
+        'é': 'e', 'è': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ẹ': 'e',
+        'ê': 'e', 'ế': 'e', 'ề': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
+        # Add more mappings as needed
+    }
+    
+    # Replace characters with diacritics using the mapping
+    output_str = ''.join([diacritics_map[char] if char in diacritics_map else char for char in input_str])
+    
+    return output_str
+
 
 def get_recommendations(customer_id, selected_option):
     # Replace this with your recommendation logic
@@ -49,8 +66,11 @@ def run_recommender_app_collab():
     
     if st.button("Find Recommendations"):
         if customer_input:
-            if customer_input.isdigit():
-                customer_id = int(customer_input)
+            customer_input_clean = remove_diacritics(customer_input)  # Bỏ dấu trong tên khách hàng
+
+            # Check if the input is a numeric customer ID
+            if customer_input_clean.isdigit():
+                customer_id = int(customer_input_clean)
                 if customer_id > 0:
                     st.subheader(f"Top {selected_option} Recommended Products for Customer ID {customer_id}")
 
@@ -85,13 +105,11 @@ def run_recommender_app_collab():
                 else:
                     st.warning("Please enter a valid numeric customer ID.")
             else:
-                customer_name = customer_input
-                customer_input_lower = customer_name.lower()  # Convert input to lowercase
-                customer_input_clean = unidecode(str(customer_input_lower))
+                customer_name = customer_input_clean
                 # Filter out rows where the 'name' column is not a string
                 df_collab_filtered = df_collab[df_collab['name'].apply(lambda x: isinstance(x, str))]
                 # Retrieve the collaborative filtering recommendations for the customer name
-                recommendations = df_collab_filtered[df_collab_filtered['name'].str.lower().apply(unidecode) == customer_input_clean].head(selected_option)
+                recommendations = df_collab_filtered[df_collab_filtered['name'].str.lower() == customer_name].head(selected_option)
 
                 if not recommendations.empty:
                     # Create a container for the product images
